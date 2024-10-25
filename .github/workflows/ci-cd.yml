@@ -1,48 +1,48 @@
-name: Docker CI/CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main  # The branch you want to trigger the workflow on
+      - main  # Change this to your primary branch name (e.g., master)
 
 jobs:
-  build_and_push:
+  build:
     runs-on: ubuntu-latest
 
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        ports:
+          - 1438:1433
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD }}
+          MSSQL_PID: Express
+        options: >-
+          --health-cmd "exit 0"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 5
+
     steps:
-      - name: Check out code
+      - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: yourdockerhubusername/inventory-api:latest
+      - name: Build and Push Docker Image
+        run: |
+          docker-compose -f docker-compose.yml build
+          docker-compose -f docker-compose.yml push
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build_and_push
-
-    steps:
-      - name: SSH to Local Server and Pull Latest Image
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ secrets.LOCAL_SERVER_HOST }}
-          username: ${{ secrets.LOCAL_SERVER_USERNAME }}
-          key: ${{ secrets.LOCAL_SERVER_SSH_KEY }}
-          script: |
-            docker pull yourdockerhubusername/inventory-api:latest
-            docker stop inventory-api || true
-            docker rm inventory-api || true
-            docker run -d --name inventory-api -p 8090:8080 yourdockerhubusername/inventory-api:latest
+      - name: Run Tests
+        run: |
+          docker-compose -f docker-compose.yml up --abort-on-container-exit
+          docker-compose -f docker-compose.yml down
