@@ -9,21 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        ports:
-          - 1438:1433
-        env:
-          ACCEPT_EULA: Y
-          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD }}
-          MSSQL_PID: Express
-        options: >-
-          --health-cmd "exit 0"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
