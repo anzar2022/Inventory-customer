@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   inventory-api:
-    image: inventory-api:latest
+    image: anzar14/inventory-api:latest
     build:
       context: .
       dockerfile: Dockerfile
