@@ -40,7 +40,7 @@ jobs:
       - name: Wait for MSSQL to be healthy
         run: |
           for i in {1..30}; do
-            if docker exec mssql /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "${{ secrets.MSSQL_SA_PASSWORD }}" -Q "SELECT 1" &>/dev/null; then
+            if docker exec mssql /opt/mssql-tools/bin/sqlcmd -S 172.25.64.1,1438 -U SA -P "${{ secrets.MSSQL_SA_PASSWORD }}" -Q "SELECT 1" &>/dev/null; then
               echo "MSSQL is healthy."
               break
             fi
