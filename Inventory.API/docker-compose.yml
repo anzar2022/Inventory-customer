@@ -1,0 +1,32 @@
+
+services:
+  web:
+    #image: aspnetcore-webapp:latest  # Or build from the Dockerfile
+    build:
+      context: .  # Relative path to the parent folder of Inventory.API   
+      #context: ../  # Relative path to the parent folder of Inventory.API
+      #context: D:/Project/vsProject/Inventory/Customer  # Set the context to the parent folder
+      dockerfile: Dockerfile  # Dockerfile inside the Inventory.API folder
+      #dockerfile: Inventory.API/Dockerfile  # Dockerfile inside the Inventory.API folder
+    ports:
+      - "5000:80"  # Maps port 5000 on your host to port 80 in the container
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"  # Set the environment
+    volumes:
+      - .:/app  # Mount the current directory to /app in the container (optional, for local development)
+    networks:
+      - webapp-network
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest  # Using SQL Server
+    environment:
+      SA_PASSWORD: "YourPassword123!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1438:1433"  # SQL Server port
+    networks:
+      - webapp-network
+
+networks:
+  webapp-network:
+    driver: bridge

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  inventory-api:
+    image: inventory-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventory-api
+    ports:
+      - "8090:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=172.25.64.1,1438;Initial Catalog=InventoryCustomer;Persist Security Info=True;User ID=sa;Password=YourStrong!Passw0rd;Trust Server Certificate=True;
+    depends_on:
+      - mssql
+    networks:
+      - inventory-network
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql
+    ports:
+      - "1438:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      - inventory-network
+
+volumes:
+  mssql_data:
+
+networks:
+  inventory-network:
+    driver: bridge
