@@ -3,15 +3,18 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - master  # Change this to your primary branch name (e.g., main)
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -22,17 +25,34 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+      # Added .NET setup
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
 
+      # Added Build and Test steps
+      - name: Build and Test
+        run: |
+          dotnet restore
+          dotnet build --no-restore
+          dotnet test --no-build --verbosity normal
+
+      # Improved Docker build and push
       - name: Build and Push Docker Image
-        run: |
-          docker-compose -f docker-compose.yml build
-          docker-compose -f docker-compose.yml push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            anzar14/inventory-api:latest
+            anzar14/inventory-api:${{ github.sha }}
+          cache-from: type=registry,ref=anzar14/inventory-api:latest
+          cache-to: type=inline
 
-      - name: Run Tests
+      # Optional: Added deployment notification
+      - name: Notify Deployment
+        if: success()
         run: |
-          docker-compose -f docker-compose.yml up --abort-on-container-exit
-          docker-compose -f docker-compose.yml down
+          echo "🚀 New version deployed successfully!"
+          echo "Image: anzar14/inventory-api:${{ github.sha }}"
